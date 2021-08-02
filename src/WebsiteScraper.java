@@ -1,12 +1,7 @@
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.Stack;
 
 import static java.lang.Math.*;
 
@@ -14,69 +9,20 @@ public class WebsiteScraper implements Runnable {
 
     private String stringURL, htmlTag, htmlEndTag, Keyword;
     private boolean cacheMode;
-    private int tagFound, KeywordFound;
     private URL url;
     private BufferedReader bufferedReader;
+    private final Stack<String> cacheStack = new Stack<>();
+    private String dir = "cache";
 
-    public String getStringURL() {
-        return stringURL;
+    public WebsiteScraper(String stringURL, String htmlTag) {
+        setStringURL(stringURL);
+        this.htmlTag = htmlTag;
     }
 
-    public void setStringURL(String stringURL) {
-        this.stringURL = stringURL;
-        setUrl();
-    }
-
-    public URL getUrl() {
-        return url;
-    }
-
-    public void setUrl() {
-        try {
-            this.url = new URL(stringURL);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void setUrl(URL url) {
-        this.url = url;
-    }
-
-    public String getHtmlTag() {
-        return htmlTag;
-    }
-
-    public void setHtmlTag(String htmlTag) {
-        this.htmlTag = '<' + htmlTag + '>';
-        setHtmlEndTag("<\"" + htmlTag + '>');
-    }
-
-    private String getHtmlEndTag() {
-        return htmlEndTag;
-    }
-
-    private void setHtmlEndTag(String htmlEndTag) {
-        this.htmlEndTag = htmlEndTag;
-    }
-
-    public boolean isCacheMode() {
-        return cacheMode;
-    }
-
-    public void setCacheMode(boolean cacheMode) {
-        this.cacheMode = cacheMode;
-        dir = "cache";
-    }
-
-    public void build() throws MalformedURLException {
-        processesReader();
-    }
-
-    private String dir;
-
-    public void setDir(String dir) {
-        this.dir = dir;
+    public WebsiteScraper(String stringURL, String htmlTag, boolean cacheMode) {
+        setStringURL(stringURL);
+        this.htmlTag = htmlTag;
+        setCacheMode(cacheMode);
     }
 
     private void processesReader() throws MalformedURLException {
@@ -93,7 +39,7 @@ public class WebsiteScraper implements Runnable {
         } else {
             try {
                 bufferedReader = new BufferedReader(new InputStreamReader(url.openStream()));
-                cacheInFile(path);
+                cacheStack.push(path);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 throw e;
@@ -103,7 +49,7 @@ public class WebsiteScraper implements Runnable {
         }
     }
 
-    private void cacheInFile(String path) {
+    private void cacheInFile(String path, BufferedReader bufferedReader) {
         new File(dir).mkdirs();
         try (FileWriter fileWriter = new FileWriter(dir + path)) {
             String string;
@@ -115,22 +61,73 @@ public class WebsiteScraper implements Runnable {
         }
     }
 
+    public void build() throws MalformedURLException {
+        processesReader();
+    }
+
     @Override
     public void run() {
-
+        if (cacheMode) {
+            while (!cacheStack.isEmpty()) {
+                cacheInFile(cacheStack.pop(), this.bufferedReader);
+            }
+        }
     }
 
-    public WebsiteScraper(String stringURL, String htmlTag) {
-        setStringURL(stringURL);
-        this.htmlTag = htmlTag;
+    public String getStringURL() {
+        return stringURL;
     }
 
-    public WebsiteScraper(String stringURL, String htmlTag, boolean cacheMode) {
-        setStringURL(stringURL);
-        this.htmlTag = htmlTag;
-        setCacheMode(cacheMode);
-
+    public void setStringURL(String stringURL) {
+        this.stringURL = stringURL;
+        setUrl();
     }
 
+    public URL getUrl() {
+        return url;
+    }
+
+    public void setUrl(URL url) {
+        this.url = url;
+    }
+
+    public void setUrl() {
+        try {
+            this.url = new URL(stringURL);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setHtmlEndTag(String htmlEndTag) {
+        this.htmlEndTag = "</" + htmlEndTag + '>';
+    }
+
+    public boolean isCacheMode() {
+        return cacheMode;
+    }
+
+    public void setCacheMode(boolean cacheMode) {
+        this.cacheMode = cacheMode;
+        setDir(dir);
+    }
+
+    public void setDir(String dir) {
+        this.dir = dir + '\\';
+    }
+
+    public String getHtmlEndTag() {
+        return htmlEndTag;
+    }
+
+    public void setHtmlTag(Boolean hasEndTag, String htmlTag) {
+        this.htmlTag = '<' + htmlTag + '>';
+        if (hasEndTag)
+            setHtmlEndTag("<\"" + htmlTag + '>');
+    }
+
+    public String getHtmlTag() {
+        return htmlTag;
+    }
 
 }
