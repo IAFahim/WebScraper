@@ -7,7 +7,9 @@ import static java.lang.Math.*;
 
 public class WebsiteScraper implements Runnable {
 
-    private String stringURL, htmlTag, htmlEndTag, Keyword;
+    private String stringURL;
+    private String htmlTag;
+    private String htmlEndTag;
     private boolean cacheMode;
     private URL url;
     private BufferedReader bufferedReader;
@@ -93,14 +95,14 @@ public class WebsiteScraper implements Runnable {
 
     public void setUrl() {
         try {
-            this.url = new URL(stringURL);
+            setUrl(new URL(stringURL));
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
     }
 
     public void setHtmlEndTag(String htmlEndTag) {
-        this.htmlEndTag = "</" + htmlEndTag + '>';
+        this.htmlEndTag =  htmlEndTag;
     }
 
     public boolean isCacheMode() {
